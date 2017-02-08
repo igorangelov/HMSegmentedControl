@@ -73,7 +73,7 @@
 }
 
 - (id)initWithSectionTitles:(NSArray *)sectiontitles {
-    self = [super initWithFrame:CGRectZero];
+    self = [self initWithFrame:CGRectZero];
     
     if (self) {
         [self commonInit];
@@ -120,6 +120,7 @@
     [super awakeFromNib];
     
     self.segmentWidth = 0.0f;
+    [self commonInit];
 }
 
 - (void)commonInit {
@@ -130,10 +131,12 @@
     [self addSubview:self.scrollView];
     
     _backgroundColor = [UIColor whiteColor];
+    _backgroundColorSelectedImage = [UIColor whiteColor];
+    _backgroundColorUnselectedImage = [UIColor whiteColor];
+
     self.opaque = NO;
     _selectionIndicatorColor = [UIColor colorWithRed:52.0f/255.0f green:181.0f/255.0f blue:229.0f/255.0f alpha:1.0f];
-    _selectionIndicatorBoxColor = _selectionIndicatorColor;
-
+    
     self.selectedSegmentIndex = 0;
     self.segmentEdgeInset = UIEdgeInsetsMake(0, 5, 0, 5);
     self.selectionIndicatorHeight = 5.0f;
@@ -159,6 +162,8 @@
     self.selectionIndicatorBoxLayer.borderWidth = 1.0f;
     self.selectionIndicatorBoxOpacity = 0.2;
     
+    self.animetedIndex = -1;
+    
     self.contentMode = UIViewContentModeRedraw;
 }
 
@@ -178,14 +183,12 @@
     _sectionTitles = sectionTitles;
     
     [self setNeedsLayout];
-    [self setNeedsDisplay];
 }
 
 - (void)setSectionImages:(NSArray *)sectionImages {
     _sectionImages = sectionImages;
     
     [self setNeedsLayout];
-    [self setNeedsDisplay];
 }
 
 - (void)setSelectionIndicatorLocation:(HMSegmentedControlSelectionIndicatorLocation)selectionIndicatorLocation {
@@ -219,10 +222,6 @@
 #pragma mark - Drawing
 
 - (CGSize)measureTitleAtIndex:(NSUInteger)index {
-    if (index >= self.sectionTitles.count) {
-        return CGSizeZero;
-    }
-    
     id title = self.sectionTitles[index];
     CGSize size = CGSizeZero;
     BOOL selected = (index == self.selectedSegmentIndex) ? YES : NO;
@@ -274,8 +273,8 @@
     
     self.selectionIndicatorStripLayer.backgroundColor = self.selectionIndicatorColor.CGColor;
     
-    self.selectionIndicatorBoxLayer.backgroundColor = self.selectionIndicatorBoxColor.CGColor;
-    self.selectionIndicatorBoxLayer.borderColor = self.selectionIndicatorBoxColor.CGColor;
+    self.selectionIndicatorBoxLayer.backgroundColor = self.selectionIndicatorColor.CGColor;
+    self.selectionIndicatorBoxLayer.borderColor = self.selectionIndicatorColor.CGColor;
     
     // Remove all sublayers to avoid drawing images over existing ones
     self.scrollView.layer.sublayers = nil;
@@ -290,8 +289,7 @@
             CGSize size = [self measureTitleAtIndex:idx];
             stringWidth = size.width;
             stringHeight = size.height;
-            CGRect rectDiv = CGRectZero;
-            CGRect fullRect = CGRectZero;
+            CGRect rectDiv, fullRect;
             
             // Text inside the CATextLayer will appear blurry unless the rect values are rounded
             BOOL locationUp = (self.selectionIndicatorLocation == HMSegmentedControlSelectionIndicatorLocationUp);
@@ -346,6 +344,8 @@
             [self addBackgroundAndBorderLayerWithRect:fullRect];
         }];
     } else if (self.type == HMSegmentedControlTypeImages) {
+        __block CGFloat oldX = 0;
+        __block NSMutableArray *segmentRectArray = [NSMutableArray array];
         [self.sectionImages enumerateObjectsUsingBlock:^(id iconImage, NSUInteger idx, BOOL *stop) {
             UIImage *icon = iconImage;
             CGFloat imageWidth = icon.size.width;
@@ -356,19 +356,69 @@
             
             CALayer *imageLayer = [CALayer layer];
             imageLayer.frame = rect;
+            imageLayer.contents = (id)icon.CGImage;
+            imageLayer.backgroundColor = self.backgroundColorSelectedImage.CGColor;
+            imageLayer.cornerRadius = imageWidth/2;
+            imageLayer.borderColor = [UIColor whiteColor].CGColor;
+            imageLayer.borderWidth = 4.0f;
+            imageLayer.masksToBounds = YES;
+            imageLayer.contentsGravity = kCAGravityResize;
             
-            if (self.selectedSegmentIndex == idx) {
-                if (self.sectionSelectedImages) {
-                    UIImage *highlightIcon = [self.sectionSelectedImages objectAtIndex:idx];
+
+            //set array
+            [segmentRectArray addObject:[NSValue valueWithCGRect:rect]];
+
+            UIImage *highlightIcon = icon;
+            //line var
+            CGFloat offset = imageLayer.borderWidth;
+            UIColor *lineColor = self.lineColorSelected;
+            
+            if (self.sectionSelectedImages) {
+                highlightIcon = [self.sectionSelectedImages objectAtIndex:idx];
+            }
+            
+            if (idx < self.selectedSegmentIndex) {
+                if(idx == self.selectedSegmentIndex-1)
+                {
+                    if(self.animetedIndex != self.selectedSegmentIndex)
+                    {
+                        //animation
+                        //to do animation correctly, respect order Begin/Completion/AddAnimation/Commit
+                        [CATransaction begin];
+                        [CATransaction setCompletionBlock:^{
+                            imageLayer.contents = (id)highlightIcon.CGImage;
+                            self.animetedIndex = self.selectedSegmentIndex;
+                        }];
+                        
+                        CABasicAnimation * animation = [CABasicAnimation animationWithKeyPath:@"transform.scale.x"];
+                        animation.toValue = @1.5;
+                        animation.fromValue = @0.5;
+                        animation.duration = 0.8;
+                        [imageLayer addAnimation:animation forKey:@"bounds"];
+                        [CATransaction commit];
+                    }else{
+                        imageLayer.contents = (id)highlightIcon.CGImage;
+                    }
+                    
+                }else
+                {
                     imageLayer.contents = (id)highlightIcon.CGImage;
-                } else {
-                    imageLayer.contents = (id)icon.CGImage;
                 }
-            } else {
+            }else if(idx==self.selectedSegmentIndex)
+            {
+                imageLayer.backgroundColor = self.backgroundColorSelectedImage.CGColor;
+                //line
+                offset = 0;
+                lineColor = self.lineColorSelected;
+            }
+            else {
                 imageLayer.contents = (id)icon.CGImage;
+                imageLayer.backgroundColor = self.backgroundColorUnselectedImage.CGColor;
+                lineColor = self.backgroundColorUnselectedImage;
             }
             
             [self.scrollView.layer addSublayer:imageLayer];
+            
             // Vertical Divider
             if (self.isVerticalDividerEnabled && idx>0) {
                 CALayer *verticalDividerLayer = [CALayer layer];
@@ -377,9 +427,47 @@
                 
                 [self.scrollView.layer addSublayer:verticalDividerLayer];
             }
+            //Horrizontal divider :P
+            if(self.isHorizontalDividerEnabled)
+            {
+                CGFloat scrollHeight = self.scrollView.frame.size.height/2;
+                CAShapeLayer *line = [CAShapeLayer layer];
+                UIBezierPath *linePath=[UIBezierPath bezierPath];
+                [linePath moveToPoint: CGPointMake(oldX, scrollHeight )];
+                [linePath addLineToPoint:CGPointMake(x+offset,scrollHeight )];
+                line.lineWidth = 4;
+                line.path = linePath.CGPath;
+                line.fillColor = nil;
+                line.opacity = 1.0;
+                line.strokeColor = lineColor.CGColor;
+                [self.scrollView.layer addSublayer:line];
+                oldX = x + imageWidth - offset ;
+                
+                //add last line
+                if(idx == self.sectionSelectedImages.count -1)
+                {
+                    CAShapeLayer *line = [CAShapeLayer layer];
+                    UIBezierPath *linePath=[UIBezierPath bezierPath];
+                    [linePath moveToPoint: CGPointMake(oldX-offset, scrollHeight)];
+                    [linePath addLineToPoint:CGPointMake(self.scrollView.frame.size.width,scrollHeight)];
+                    line.lineWidth = 4;
+                    line.path=linePath.CGPath;
+                    line.fillColor = nil;
+                    line.opacity = 1.0;
+                    line.strokeColor = self.backgroundColorUnselectedImage.CGColor;
+                    [self.scrollView.layer addSublayer:line];
+                }
+            }
             
             [self addBackgroundAndBorderLayerWithRect:rect];
         }];
+        
+        //block
+        if(self.segmentArrayBlock)
+        {
+            self.segmentArrayBlock(segmentRectArray.copy);
+        }
+        
     } else if (self.type == HMSegmentedControlTypeTextImages){
 		[self.sectionImages enumerateObjectsUsingBlock:^(id iconImage, NSUInteger idx, BOOL *stop) {
             UIImage *icon = iconImage;
@@ -477,7 +565,7 @@
     // Background layer
     CALayer *backgroundLayer = [CALayer layer];
     backgroundLayer.frame = fullRect;
-    [self.layer insertSublayer:backgroundLayer atIndex:0];
+    [self.scrollView.layer insertSublayer:backgroundLayer atIndex:0];
     
     // Border layer
     if (self.borderType & HMSegmentedControlBorderTypeTop) {
@@ -652,7 +740,7 @@
             CGFloat stringWidth = [self measureTitleAtIndex:idx].width + self.segmentEdgeInset.left + self.segmentEdgeInset.right;
             self.segmentWidth = MAX(stringWidth, self.segmentWidth);
         }];
-    } else if (self.type == HMSegmentedControlTypeTextImages && self.segmentWidthStyle == HMSegmentedControlSegmentWidthStyleDynamic) {
+    } else if (self.type == HMSegmentedControlTypeTextImages && HMSegmentedControlSegmentWidthStyleDynamic) {
         NSMutableArray *mutableSegmentWidths = [NSMutableArray array];
         
         int i = 0;
@@ -751,7 +839,7 @@
 }
 
 - (void)scrollToSelectedSegmentIndex:(BOOL)animated {
-    CGRect rectForSelectedIndex = CGRectZero;
+    CGRect rectForSelectedIndex;
     CGFloat selectedSegmentOffset = 0;
     if (self.segmentWidthStyle == HMSegmentedControlSegmentWidthStyleFixed) {
         rectForSelectedIndex = CGRectMake(self.segmentWidth * self.selectedSegmentIndex,

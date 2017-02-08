@@ -11,6 +11,7 @@
 @class HMSegmentedControl;
 
 typedef void (^IndexChangeBlock)(NSInteger index);
+typedef void (^SegmentArrayBlock)(NSArray *array);
 typedef NSAttributedString *(^HMTitleFormatterBlock)(HMSegmentedControl *segmentedControl, NSString *title, NSUInteger index, BOOL selected);
 
 typedef NS_ENUM(NSInteger, HMSegmentedControlSelectionStyle) {
@@ -89,18 +90,11 @@ typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
 @property (nonatomic, strong) UIColor *backgroundColor UI_APPEARANCE_SELECTOR;
 
 /**
- Color for the selection indicator stripe
+ Color for the selection indicator stripe/box
  
  Default is `R:52, G:181, B:229`
  */
 @property (nonatomic, strong) UIColor *selectionIndicatorColor UI_APPEARANCE_SELECTOR;
-
-/**
- Color for the selection indicator box
- 
- Default is selectionIndicatorColor
- */
-@property (nonatomic, strong) UIColor *selectionIndicatorBoxColor UI_APPEARANCE_SELECTOR;
 
 /**
  Color for the vertical divider between segments.
@@ -188,9 +182,16 @@ typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
 @property(nonatomic, getter = isVerticalDividerEnabled) BOOL verticalDividerEnabled;
 
 /**
+ Default is NO. Set to YES to show a horizontal divider between the segments.
+ */
+@property(nonatomic, getter = isHorizontalDividerEnabled) BOOL horizontalDividerEnabled;
+
+/**
  Index of the currently selected segment.
  */
 @property (nonatomic, assign) NSInteger selectedSegmentIndex;
+
+@property (nonatomic, assign) NSInteger animetedIndex;
 
 /**
  Height of the selection indicator. Only effective when `HMSegmentedControlSelectionStyle` is either `HMSegmentedControlSelectionStyleTextWidthStripe` or `HMSegmentedControlSelectionStyleFullWidthStripe`.
@@ -222,6 +223,30 @@ typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
 @property (nonatomic, readwrite) UIEdgeInsets segmentEdgeInset;
 
 @property (nonatomic, readwrite) UIEdgeInsets enlargeEdgeInset;
+
+/**
+ UIColor for selected Image
+ Default is White 
+ */
+@property (nonatomic, strong) UIColor *backgroundColorSelectedImage UI_APPEARANCE_SELECTOR;
+
+/**
+ UIColor for selected Image
+ Default is White
+ */
+
+@property (nonatomic, strong) UIColor *backgroundColorUnselectedImage UI_APPEARANCE_SELECTOR;
+
+/**
+ UIColor for selected line
+ Default is White
+ */
+@property (nonatomic, strong) UIColor *lineColorSelected UI_APPEARANCE_SELECTOR;
+
+/**
+  Provide a block to be executed when array of rect are full init
+ */
+@property (nonatomic, copy) SegmentArrayBlock segmentArrayBlock;
 
 /**
  Default is YES. Set to NO to disable animation during user selection.
