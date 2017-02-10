@@ -164,6 +164,10 @@
     
     self.animetedIndex = -1;
     
+    
+    self.doImageAnimation = NO;
+    self.doLineAnimation = NO;
+    
     self.contentMode = UIViewContentModeRedraw;
 }
 
@@ -380,14 +384,14 @@
             if (idx < self.selectedSegmentIndex) {
                 if(idx == self.selectedSegmentIndex-1)
                 {
-                    if(self.animetedIndex != self.selectedSegmentIndex)
+                    if(self.animetedIndex != self.selectedSegmentIndex && self.doImageAnimation)
                     {
                         //animation
                         //to do animation correctly, respect order Begin/Completion/AddAnimation/Commit
                         [CATransaction begin];
                         [CATransaction setCompletionBlock:^{
                             imageLayer.contents = (id)highlightIcon.CGImage;
-                            self.animetedIndex = self.selectedSegmentIndex;
+                            //self.animetedIndex = self.selectedSegmentIndex;
                         }];
                         
                         CABasicAnimation * animation = [CABasicAnimation animationWithKeyPath:@"transform.scale.x"];
@@ -435,12 +439,38 @@
                 UIBezierPath *linePath=[UIBezierPath bezierPath];
                 [linePath moveToPoint: CGPointMake(oldX, scrollHeight )];
                 [linePath addLineToPoint:CGPointMake(x+offset,scrollHeight )];
-                line.lineWidth = 4;
                 line.path = linePath.CGPath;
+                line.lineWidth = 4;
                 line.fillColor = nil;
                 line.opacity = 1.0;
                 line.strokeColor = lineColor.CGColor;
+                line.strokeEnd = 1;
+                
+                
+                if(idx == self.selectedSegmentIndex)
+                {
+                    if(self.animetedIndex <=self.selectedSegmentIndex)
+                    {
+                        //animation
+                        //to do animation correctly, respect order Begin/Completion/AddAnimation/Commit
+                        [CATransaction begin];
+                        [CATransaction setCompletionBlock:^{
+                            self.animetedIndex = self.selectedSegmentIndex;
+                        }];
+                        CABasicAnimation * animation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
+                        animation.fromValue = @0.0;
+                        animation.duration = 0.5;
+                        [line addAnimation:animation forKey:@"drawLineAnimation"];
+                        [CATransaction commit];
+                        
+                    }
+                    
+                    self.animetedIndex = self.selectedSegmentIndex;
+                    
+                }
+                
                 [self.scrollView.layer addSublayer:line];
+                //set old x
                 oldX = x + imageWidth - offset ;
                 
                 //add last line
@@ -458,6 +488,9 @@
                     [self.scrollView.layer addSublayer:line];
                 }
             }
+            
+            
+            
             
             [self addBackgroundAndBorderLayerWithRect:rect];
         }];

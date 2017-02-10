@@ -243,6 +243,9 @@ typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
  */
 @property (nonatomic, strong) UIColor *lineColorSelected UI_APPEARANCE_SELECTOR;
 
+@property (nonatomic, assign) BOOL doImageAnimation;
+@property (nonatomic, assign) BOOL doLineAnimation;
+
 /**
   Provide a block to be executed when array of rect are full init
  */
