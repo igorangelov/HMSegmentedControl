@@ -97,6 +97,19 @@
     return self;
 }
 
+- (id)initWithSectionImages:(NSArray*)sectionImages sectionSelectedImages:(NSArray*)sectionSelectedImages sectionType:(HMSegmentedControlType) type{
+    self = [super initWithFrame:CGRectZero];
+    
+    if (self) {
+        [self commonInit];
+        self.sectionImages = sectionImages;
+        self.sectionSelectedImages = sectionSelectedImages;
+        self.type = type;
+    }
+    
+    return self;
+}
+
 - (instancetype)initWithSectionImages:(NSArray *)sectionImages sectionSelectedImages:(NSArray *)sectionSelectedImages titlesForSections:(NSArray *)sectiontitles {
     self = [super initWithFrame:CGRectZero];
     
@@ -211,7 +224,7 @@
 
 - (void)setSegmentWidthStyle:(HMSegmentedControlSegmentWidthStyle)segmentWidthStyle {
     // Force HMSegmentedControlSegmentWidthStyleFixed when type is HMSegmentedControlTypeImages.
-    if (self.type == HMSegmentedControlTypeImages) {
+    if (self.type == HMSegmentedControlTypeImages || self.type == HMSegmentedControlTypeTAPImages) {
         _segmentWidthStyle = HMSegmentedControlSegmentWidthStyleFixed;
     } else {
         _segmentWidthStyle = segmentWidthStyle;
@@ -347,7 +360,7 @@
             
             [self addBackgroundAndBorderLayerWithRect:fullRect];
         }];
-    } else if (self.type == HMSegmentedControlTypeImages) {
+    } else if (self.type == HMSegmentedControlTypeImages || self.type == HMSegmentedControlTypeTAPImages) {
         __block CGFloat oldX = 0;
         __block NSMutableArray *segmentRectArray = [NSMutableArray array];
         [self.sectionImages enumerateObjectsUsingBlock:^(id iconImage, NSUInteger idx, BOOL *stop) {
@@ -381,44 +394,62 @@
                 highlightIcon = [self.sectionSelectedImages objectAtIndex:idx];
             }
             
-            if (idx < self.selectedSegmentIndex) {
-                if(idx == self.selectedSegmentIndex-1)
+            
+            if(self.type == HMSegmentedControlTypeImages) {
+                if(idx==self.selectedSegmentIndex)
                 {
-                    if(self.animetedIndex != self.selectedSegmentIndex && self.doImageAnimation)
+                    imageLayer.contents = (id)icon.CGImage;
+                    imageLayer.backgroundColor = self.backgroundColorSelectedImage.CGColor;
+                    //line
+                    offset = 0;
+                    lineColor = self.lineColorSelected;
+                }
+                else {
+                    imageLayer.contents = (id)icon.CGImage;
+                    imageLayer.backgroundColor = self.backgroundColorUnselectedImage.CGColor;
+                    lineColor = self.backgroundColorUnselectedImage;
+                }
+            }else {
+                if (idx < self.selectedSegmentIndex) {
+                    if(idx == self.selectedSegmentIndex-1)
                     {
-                        //animation
-                        //to do animation correctly, respect order Begin/Completion/AddAnimation/Commit
-                        [CATransaction begin];
-                        [CATransaction setCompletionBlock:^{
+                        if(self.animetedIndex != self.selectedSegmentIndex && self.doImageAnimation)
+                        {
+                            //animation
+                            //to do animation correctly, respect order Begin/Completion/AddAnimation/Commit
+                            [CATransaction begin];
+                            [CATransaction setCompletionBlock:^{
+                                imageLayer.contents = (id)highlightIcon.CGImage;
+                                //self.animetedIndex = self.selectedSegmentIndex;
+                            }];
+                            
+                            CABasicAnimation * animation = [CABasicAnimation animationWithKeyPath:@"transform.scale.x"];
+                            animation.toValue = @1.5;
+                            animation.fromValue = @0.5;
+                            animation.duration = 0.8;
+                            [imageLayer addAnimation:animation forKey:@"bounds"];
+                            [CATransaction commit];
+                        }else{
                             imageLayer.contents = (id)highlightIcon.CGImage;
-                            //self.animetedIndex = self.selectedSegmentIndex;
-                        }];
+                        }
                         
-                        CABasicAnimation * animation = [CABasicAnimation animationWithKeyPath:@"transform.scale.x"];
-                        animation.toValue = @1.5;
-                        animation.fromValue = @0.5;
-                        animation.duration = 0.8;
-                        [imageLayer addAnimation:animation forKey:@"bounds"];
-                        [CATransaction commit];
-                    }else{
+                    }else
+                    {
                         imageLayer.contents = (id)highlightIcon.CGImage;
                     }
-                    
-                }else
+                }else if(idx==self.selectedSegmentIndex)
                 {
-                    imageLayer.contents = (id)highlightIcon.CGImage;
+                    imageLayer.backgroundColor = self.backgroundColorSelectedImage.CGColor;
+                    //line
+                    offset = 0;
+                    lineColor = self.lineColorSelected;
                 }
-            }else if(idx==self.selectedSegmentIndex)
-            {
-                imageLayer.backgroundColor = self.backgroundColorSelectedImage.CGColor;
-                //line
-                offset = 0;
-                lineColor = self.lineColorSelected;
-            }
-            else {
-                imageLayer.contents = (id)icon.CGImage;
-                imageLayer.backgroundColor = self.backgroundColorUnselectedImage.CGColor;
-                lineColor = self.backgroundColorUnselectedImage;
+                else {
+                    imageLayer.contents = (id)icon.CGImage;
+                    imageLayer.backgroundColor = self.backgroundColorUnselectedImage.CGColor;
+                    lineColor = self.backgroundColorUnselectedImage;
+                }
+
             }
             
             [self.scrollView.layer addSublayer:imageLayer];
@@ -677,7 +708,7 @@
     if (self.type == HMSegmentedControlTypeText) {
         CGFloat stringWidth = [self measureTitleAtIndex:self.selectedSegmentIndex].width;
         sectionWidth = stringWidth;
-    } else if (self.type == HMSegmentedControlTypeImages) {
+    } else if (self.type == HMSegmentedControlTypeImages || self.type == HMSegmentedControlTypeTAPImages) {
         UIImage *sectionImage = [self.sectionImages objectAtIndex:self.selectedSegmentIndex];
         CGFloat imageWidth = sectionImage.size.width;
         sectionWidth = imageWidth;
@@ -762,7 +793,7 @@
             [mutableSegmentWidths addObject:[NSNumber numberWithFloat:stringWidth]];
         }];
         self.segmentWidthsArray = [mutableSegmentWidths copy];
-    } else if (self.type == HMSegmentedControlTypeImages) {
+    } else if (self.type == HMSegmentedControlTypeImages || self.type == HMSegmentedControlTypeTAPImages) {
         for (UIImage *sectionImage in self.sectionImages) {
             CGFloat imageWidth = sectionImage.size.width + self.segmentEdgeInset.left + self.segmentEdgeInset.right;
             self.segmentWidth = MAX(imageWidth, self.segmentWidth);
@@ -797,7 +828,8 @@
     if (self.type == HMSegmentedControlTypeText) {
         return self.sectionTitles.count;
     } else if (self.type == HMSegmentedControlTypeImages ||
-               self.type == HMSegmentedControlTypeTextImages) {
+               self.type == HMSegmentedControlTypeTextImages ||
+               self.type == HMSegmentedControlTypeTAPImages) {
         return self.sectionImages.count;
     }
     
@@ -845,7 +877,7 @@
         
         NSUInteger sectionsCount = 0;
         
-        if (self.type == HMSegmentedControlTypeImages) {
+        if (self.type == HMSegmentedControlTypeImages || self.type == HMSegmentedControlTypeTAPImages) {
             sectionsCount = [self.sectionImages count];
         } else if (self.type == HMSegmentedControlTypeTextImages || self.type == HMSegmentedControlTypeText) {
             sectionsCount = [self.sectionTitles count];
