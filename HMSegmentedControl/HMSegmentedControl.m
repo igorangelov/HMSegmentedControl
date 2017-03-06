@@ -347,7 +347,43 @@
         
             [self addBackgroundAndBorderLayerWithRect:fullRect];
         }];
-    } else if (self.type == HMSegmentedControlTypeImages) {
+    }else if (self.type == HMSegmentedControlTypeImages) {
+        [self.sectionImages enumerateObjectsUsingBlock:^(id iconImage, NSUInteger idx, BOOL *stop) {
+            UIImage *icon = iconImage;
+            CGFloat imageWidth = icon.size.width;
+            CGFloat imageHeight = icon.size.height;
+            CGFloat y = roundf(CGRectGetHeight(self.frame) - self.selectionIndicatorHeight) / 2 - imageHeight / 2 + ((self.selectionIndicatorLocation == HMSegmentedControlSelectionIndicatorLocationUp) ? self.selectionIndicatorHeight : 0);
+            CGFloat x = self.segmentWidth * idx + (self.segmentWidth - imageWidth)/2.0f;
+            CGRect rect = CGRectMake(x, y, imageWidth, imageHeight);
+            
+            CALayer *imageLayer = [CALayer layer];
+            imageLayer.frame = rect;
+            
+            if (self.selectedSegmentIndex == idx) {
+                if (self.sectionSelectedImages) {
+                    UIImage *highlightIcon = [self.sectionSelectedImages objectAtIndex:idx];
+                    imageLayer.contents = (id)highlightIcon.CGImage;
+                } else {
+                    imageLayer.contents = (id)icon.CGImage;
+                }
+            } else {
+                imageLayer.contents = (id)icon.CGImage;
+            }
+            
+            [self.scrollView.layer addSublayer:imageLayer];
+            // Vertical Divider
+            if (self.isVerticalDividerEnabled && idx>0) {
+                CALayer *verticalDividerLayer = [CALayer layer];
+                verticalDividerLayer.frame = CGRectMake((self.segmentWidth * idx) - (self.verticalDividerWidth / 2), self.selectionIndicatorHeight * 2, self.verticalDividerWidth, self.frame.size.height-(self.selectionIndicatorHeight * 4));
+                verticalDividerLayer.backgroundColor = self.verticalDividerColor.CGColor;
+                
+                [self.scrollView.layer addSublayer:verticalDividerLayer];
+            }
+            
+            [self addBackgroundAndBorderLayerWithRect:rect];
+        }];
+    }
+    else if (self.type == HMSegmentedControlTypeTAPImages) {
         __block CGFloat oldX = 0;
         __block NSMutableArray *segmentRectArray = [NSMutableArray array];
         [self.sectionImages enumerateObjectsUsingBlock:^(id iconImage, NSUInteger idx, BOOL *stop) {

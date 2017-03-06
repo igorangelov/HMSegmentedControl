@@ -47,6 +47,7 @@ enum {
 typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
     HMSegmentedControlTypeText,
     HMSegmentedControlTypeImages,
+    HMSegmentedControlTypeTAPImages,
 	HMSegmentedControlTypeTextImages
 };
 
