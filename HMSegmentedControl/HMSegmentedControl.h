@@ -24,7 +24,7 @@ typedef NS_ENUM(NSInteger, HMSegmentedControlSelectionStyle) {
 typedef NS_ENUM(NSInteger, HMSegmentedControlSelectionIndicatorLocation) {
     HMSegmentedControlSelectionIndicatorLocationUp,
     HMSegmentedControlSelectionIndicatorLocationDown,
-	HMSegmentedControlSelectionIndicatorLocationNone // No selection indicator
+    HMSegmentedControlSelectionIndicatorLocationNone // No selection indicator
 };
 
 typedef NS_ENUM(NSInteger, HMSegmentedControlSegmentWidthStyle) {
@@ -47,8 +47,7 @@ enum {
 typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
     HMSegmentedControlTypeText,
     HMSegmentedControlTypeImages,
-    HMSegmentedControlTypeTAPImages,
-	HMSegmentedControlTypeTextImages
+    HMSegmentedControlTypeTextImages
 };
 
 @interface HMSegmentedControl : UIControl
@@ -210,9 +209,9 @@ typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
  When HMSegmentedControlSelectionIndicatorLocationDown is selected, top edge insets are not used
  
  Defaults are top: 0.0f
-             left: 0.0f
-           bottom: 0.0f
-            right: 0.0f
+ left: 0.0f
+ bottom: 0.0f
+ right: 0.0f
  */
 @property (nonatomic, readwrite) UIEdgeInsets selectionIndicatorEdgeInsets;
 
@@ -227,7 +226,7 @@ typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
 
 /**
  UIColor for selected Image
- Default is White 
+ Default is White
  */
 @property (nonatomic, strong) UIColor *backgroundColorSelectedImage UI_APPEARANCE_SELECTOR;
 
@@ -248,7 +247,7 @@ typedef NS_ENUM(NSInteger, HMSegmentedControlType) {
 @property (nonatomic, assign) BOOL doLineAnimation;
 
 /**
-  Provide a block to be executed when array of rect are full init
+ Provide a block to be executed when array of rect are full init
  */
 @property (nonatomic, copy) SegmentArrayBlock segmentArrayBlock;
 
