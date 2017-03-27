@@ -394,7 +394,6 @@
                 highlightIcon = [self.sectionSelectedImages objectAtIndex:idx];
             }
             
-            
             if(self.type == HMSegmentedControlTypeImages) {
                 if(idx==self.selectedSegmentIndex)
                 {
@@ -480,7 +479,7 @@
                 
                 if(idx == self.selectedSegmentIndex)
                 {
-                    if(self.animetedIndex <=self.selectedSegmentIndex)
+                    if(self.animetedIndex <self.selectedSegmentIndex)
                     {
                         //animation
                         //to do animation correctly, respect order Begin/Completion/AddAnimation/Commit
